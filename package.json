@@ -11,6 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
+    "node-xlsx": "^0.16.1",
     "prettier": "^2.3.2"
   }
 }
