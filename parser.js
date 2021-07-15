@@ -13,25 +13,61 @@ const getCountVacancy = async (text) => {
 		params: {
 			clusters: true,
 			text: text,
-			only_with_salary: true
+			only_with_salary: true,
+			per_page: 100,
+			currency: 'RUR'
 		},
 	}).then(res => res).catch(e => console.log(e))
-	console.log(await res.data.items[3])
-	return res.data
+	const countVac = res.data.found
+	if (!countVac) {
+		return 0
+	}
+
+	const salaryArr = res.data.items.map((item) => {
+		if (!item.salary.to) {
+			return [item.salary.from, item.salary.currency]
+		} else {
+			return [(item.salary.from + item.salary.to) / 2, item.salary.currency]
+		}
+	})
+
+	const result = salaryArr.reduce((sum, cur) => {
+		switch (cur[1]) {
+			case 'RUR':
+				return cur[0] + sum;
+			case 'USD':
+				return (cur[0]*74) + sum;
+			case 'BYR':
+				return (cur[0]*33) + sum;
+			case 'KZT':
+				return (cur[0]/6) + sum;
+			case 'EUR':
+				return (cur[0]*87) + sum;
+			default:
+				return cur[0] + sum;
+		}
+	}, 0) / salaryArr.length
+
+	return Math.trunc(result)
 }
 
-getCountVacancy(data[139][0])
 
 
-// for (let i = 0; i < formatData.length; i++) {
-// 	setTimeout(async () => {
-// 		formatData[i][1] = await getCountVacancy(formatData[i][0])
-// 		console.log(formatData[i], i)
-// 		if (i === formatData.length - 1) {
-// 			fs.writeFileSync(`${__dirname}/data1.xlsx`, xlsx.build([{name: "result parse", data: formatData}]))
-// 		}
-// 	}, i*1000)
-// }
+for (let i = 0; i < data.length; i++) {
+	setTimeout(async () => {
+		if (data[i][1]) {
+			data[i][2] = await getCountVacancy(data[i][0])
+		} else {
+			data[i][2] = 0
+		}
+
+		console.log(data[i], i)
+
+		if (i === data.length - 1) {
+			fs.writeFileSync(`${__dirname}/data1.xlsx`, xlsx.build([{name: "result parse", data: data}]))
+		}
+	}, i*1000)
+}
 
 //
 // fs.writeFileSync(`${__dirname}/data1.xlsx`, xlsx.build([{name: "result parse", data: formatData}]))
